@@ -23,14 +23,18 @@ import java.util.List;
 public class CommonMethods extends PageInitializer{
     public static final Logger logger = LogManager.getLogger(CommonMethods.class);
     public static WebDriver driver;
-    public void openBrowserAndLaunchApplication(){
-        String browser=ConfigReader.read("browser");
+    public void openBrowserAndLaunchApplication() {
+        String browser = ConfigReader.read("browser");
         logger.info("Launching browser: {}", browser);
-        switch(browser){
+
+        switch (browser) {
             case "Chrome":
-                ChromeOptions options=new ChromeOptions();
-                options.addArguments("--headless");
-                driver=new ChromeDriver(options);
+                ChromeOptions options = new ChromeOptions();
+                options.addArguments("--headless=new");
+                options.addArguments("--no-sandbox");
+                options.addArguments("--disable-dev-shm-usage");
+                options.addArguments("--window-size=1920,1080");
+                driver = new ChromeDriver(options);
                 break;
             case "FireFox":
                 driver = new FirefoxDriver();
@@ -45,12 +49,29 @@ public class CommonMethods extends PageInitializer{
                 logger.error("Invalid browser name: {}", browser);
                 throw new RuntimeException("Invalid browser name");
         }
-        driver.manage().window().maximize();
-        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(Constants.IMPLICIT_WAIT));
-        String url=ConfigReader.read("url");
-        driver.get(url);
-        logger.info("Navigated to URL: {}", url);
 
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(Constants.IMPLICIT_WAIT));
+        driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(90));
+
+        String url = ConfigReader.read("url");
+        int attempts = 0;
+
+        while (attempts < 2) {
+            try {
+                driver.get(url);
+                logger.info("Navigated to URL: {}", url);
+                return;
+            } catch (TimeoutException e) {
+                attempts++;
+                logger.warn("Page load timed out. Attempt {} for URL: {}", attempts, url);
+
+                if (attempts == 2) {
+                    throw e;
+                }
+
+                driver.navigate().refresh();
+            }
+        }
     }
     public void closeBrowser(){
         if(driver!=null){
