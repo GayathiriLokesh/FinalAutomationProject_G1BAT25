@@ -87,6 +87,9 @@
                     <includes>
                         <include>**/*TestRunner.java</include>
                     </includes>
+                    <excludes>
+                        <exclude>**/FailedTestRunner.java</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
 
